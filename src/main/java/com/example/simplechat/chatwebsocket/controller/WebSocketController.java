@@ -1,26 +1,25 @@
 package com.example.simplechat.chatwebsocket.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.simplechat.chatwebsocket.model.ChatMessage;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 @Controller
 public class WebSocketController {
 
-    private final SimpMessagingTemplate simpMessagingTemplate;
-
-    @Autowired
-    public WebSocketController(SimpMessagingTemplate simpMessagingTemplate) {
-        this.simpMessagingTemplate = simpMessagingTemplate;
+    @MessageMapping("/chat.sendMessage")
+    @SendTo("/topic/publicChatRoom") //stompClient.subscribe('/topic/publicChatRoom', onMessageReceived);
+    public ChatMessage sendMessage(@Payload ChatMessage message) {
+        return message;
     }
 
-    @MessageMapping("send/message")
-    public void onReceivedMessage(String message) {
-        this.simpMessagingTemplate.convertAndSend("/chat",
-                                                    new SimpleDateFormat("ss:mm:HH").format(new Date()) + message);
+    @MessageMapping("/chat.addUser") //stompClient.send("/app/chat.addUser",
+    @SendTo("/topic/publicChatRoom")
+    public ChatMessage addUser(@Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
+        headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
+        return chatMessage;
     }
 }
